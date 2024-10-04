@@ -1,67 +1,72 @@
 WITH eth_raw_data AS (
   SELECT
     t.block_date,
-    SUM(amount_usd) AS usd_volume,
-    COUNT(DISTINCT tx_hash) AS trade_count
+    SUM(t.amount_usd) AS usd_volume,
+    COUNT(DISTINCT t.tx_hash) AS trade_count
   FROM dex.trades AS t
-  INNER JOIN raindex_ethereum.OrderBook_evt_TakeOrder AS to
-    ON t.tx_hash = to.evt_tx_hash AND t.block_number = to.evt_block_number
+  INNER JOIN raindex_ethereum.OrderBook_evt_TakeOrder AS eth_evt
+    ON t.tx_hash = eth_evt.evt_tx_hash AND t.block_number = eth_evt.evt_block_number
   WHERE
-    t.block_date > TRY_CAST('2023-09-01' AS DATE)
+    t.block_date >= TRY_CAST('2023-09-01' AS DATE)
   GROUP BY t.block_date
-), polygon_raw_data AS (
+),
+polygon_raw_data AS (
   SELECT
     t.block_date,
-    SUM(amount_usd) AS usd_volume,
-    COUNT(DISTINCT tx_hash) AS trade_count
+    SUM(t.amount_usd) AS usd_volume,
+    COUNT(DISTINCT t.tx_hash) AS trade_count
   FROM dex.trades AS t
   INNER JOIN (
     SELECT evt_tx_hash, evt_block_number FROM raindex_polygon.OrderBook_evt_TakeOrder
     UNION ALL
     SELECT evt_tx_hash, evt_block_number FROM raindex_polygon.OrderBook_evt_TakeOrderV2
-  ) AS to
-    ON t.tx_hash = to.evt_tx_hash AND t.block_number = to.evt_block_number
+  ) AS poly_evt
+    ON t.tx_hash = poly_evt.evt_tx_hash AND t.block_number = poly_evt.evt_block_number
   WHERE
-    t.block_date > TRY_CAST('2023-09-01' AS DATE)
+    t.block_date >= TRY_CAST('2023-09-01' AS DATE)
   GROUP BY t.block_date
-), bnb_raw_data AS (
+),
+bnb_raw_data AS (
   SELECT
     t.block_date,
-    SUM(amount_usd) AS usd_volume,
-    COUNT(DISTINCT tx_hash) AS trade_count
+    SUM(t.amount_usd) AS usd_volume,
+    COUNT(DISTINCT t.tx_hash) AS trade_count
   FROM dex.trades AS t
-  INNER JOIN raindex_bnb.OrderBook_evt_TakeOrder AS to
-    ON t.tx_hash = to.evt_tx_hash AND t.block_number = to.evt_block_number
+  INNER JOIN raindex_bnb.OrderBook_evt_TakeOrder AS bnb_evt
+    ON t.tx_hash = bnb_evt.evt_tx_hash AND t.block_number = bnb_evt.evt_block_number
   WHERE
-    t.block_date > TRY_CAST('2023-09-01' AS DATE)
+    t.block_date >= TRY_CAST('2023-09-01' AS DATE)
   GROUP BY t.block_date
-), base_raw_data AS (
+),
+base_raw_data AS (
   SELECT
     t.block_date,
-    SUM(amount_usd) AS usd_volume,
-    COUNT(DISTINCT tx_hash) AS trade_count
+    SUM(t.amount_usd) AS usd_volume,
+    COUNT(DISTINCT t.tx_hash) AS trade_count
   FROM dex.trades AS t
   INNER JOIN (
     SELECT evt_tx_hash, evt_block_number FROM raindex_base.OrderBook_evt_TakeOrder
     UNION ALL
     SELECT evt_tx_hash, evt_block_number FROM raindex_base.OrderBook_evt_TakeOrderV2
-  ) AS to
-    ON t.tx_hash = to.evt_tx_hash AND t.block_number = to.evt_block_number
+  ) AS base_evt
+    ON t.tx_hash = base_evt.evt_tx_hash AND t.block_number = base_evt.evt_block_number
   WHERE
-    t.block_date > TRY_CAST('2023-09-01' AS DATE)
+    t.block_date >= TRY_CAST('2023-09-01' AS DATE)
   GROUP BY t.block_date
-), arbitrum_raw_data AS (
+),
+arbitrum_raw_data AS (
   SELECT
     t.block_date,
-    SUM(amount_usd) AS usd_volume,
-    COUNT(DISTINCT tx_hash) AS trade_count
+    SUM(t.amount_usd) AS usd_volume,
+    COUNT(DISTINCT t.tx_hash) AS trade_count
   FROM dex.trades AS t
-  INNER JOIN raindex_arbitrum.OrderBook_evt_TakeOrder AS to
-    ON t.tx_hash = to.evt_tx_hash AND t.block_number = to.evt_block_number
+  INNER JOIN raindex_arbitrum.OrderBook_evt_TakeOrder AS arb_evt
+    ON t.tx_hash = arb_evt.evt_tx_hash AND t.block_number = arb_evt.evt_block_number
   WHERE
-    t.block_date > TRY_CAST('2023-09-01' AS DATE)
+    t.block_date >= TRY_CAST('2023-09-01' AS DATE)
   GROUP BY t.block_date
-), combined_raw_data AS (
+),
+combined_raw_data AS (
   SELECT
     block_date,
     SUM(usd_volume) AS usd_volume,
@@ -79,15 +84,17 @@ WITH eth_raw_data AS (
   ) AS combined
   GROUP BY
     block_date
-), time_series AS (
+),
+time_series AS (
   SELECT
     gen_date
   FROM UNNEST(SEQUENCE(
-    TRY_CAST('2023-09-01' AS TIMESTAMP),
-    CAST(CURRENT_DATE AS TIMESTAMP),
-    INTERVAL '1' day
+    TRY_CAST('2023-09-01' AS DATE),
+    CURRENT_DATE,
+    INTERVAL '1' DAY
   )) AS tbl(gen_date)
-), cumulative_data AS (
+),
+cumulative_data AS (
   SELECT
     ts.gen_date AS day,
     SUM(COALESCE(rd.usd_volume, 0)) OVER (ORDER BY ts.gen_date) AS cumulative_volume,
@@ -115,8 +122,6 @@ WITH eth_raw_data AS (
     ON ts.gen_date = ba.block_date
   LEFT JOIN arbitrum_raw_data AS ar
     ON ts.gen_date = ar.block_date
-  WHERE
-    ts.gen_date < CURRENT_TIMESTAMP + INTERVAL '1' day
 )
 SELECT
   day,
@@ -135,4 +140,3 @@ SELECT
 FROM cumulative_data
 ORDER BY
   day DESC;
-
