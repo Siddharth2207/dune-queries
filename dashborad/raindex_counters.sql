@@ -32,7 +32,11 @@ bnb_raw_data AS (
     SUM(t.amount_usd) AS usd_volume,
     COUNT(DISTINCT t.tx_hash) AS trade_count
   FROM dex.trades AS t
-  INNER JOIN raindex_bnb.OrderBook_evt_TakeOrder AS bnb_evt
+  INNER JOIN (
+    SELECT evt_tx_hash, evt_block_number FROM raindex_bnb.OrderBook_evt_TakeOrder
+    UNION ALL
+    SELECT evt_tx_hash, evt_block_number FROM raindex_bnb.OrderBook_evt_TakeOrderV2
+  ) AS bnb_evt
     ON t.tx_hash = bnb_evt.evt_tx_hash AND t.block_number = bnb_evt.evt_block_number
   WHERE
     t.block_date >= TRY_CAST('2023-09-01' AS DATE)
@@ -54,13 +58,19 @@ base_raw_data AS (
     t.block_date >= TRY_CAST('2023-09-01' AS DATE)
   GROUP BY t.block_date
 ),
+
+-- Arbitrum Network (Modified)
 arbitrum_raw_data AS (
   SELECT
     t.block_date,
     SUM(t.amount_usd) AS usd_volume,
     COUNT(DISTINCT t.tx_hash) AS trade_count
   FROM dex.trades AS t
-  INNER JOIN raindex_arbitrum.OrderBook_evt_TakeOrder AS arb_evt
+  INNER JOIN (
+    SELECT evt_tx_hash, evt_block_number FROM raindex_arbitrum.OrderBook_evt_TakeOrder
+    UNION ALL
+    SELECT evt_tx_hash, evt_block_number FROM raindex_arbitrum.OrderBook_evt_TakeOrderV2
+  ) AS arb_evt
     ON t.tx_hash = arb_evt.evt_tx_hash AND t.block_number = arb_evt.evt_block_number
   WHERE
     t.block_date >= TRY_CAST('2023-09-01' AS DATE)
@@ -85,6 +95,7 @@ combined_raw_data AS (
   GROUP BY
     block_date
 ),
+
 time_series AS (
   SELECT
     gen_date
@@ -94,6 +105,7 @@ time_series AS (
     INTERVAL '1' DAY
   )) AS tbl(gen_date)
 ),
+
 cumulative_data AS (
   SELECT
     ts.gen_date AS day,
