@@ -1,9 +1,9 @@
 WITH unique_events AS (
   SELECT DISTINCT evt_tx_hash, evt_block_number
   FROM (
-bnb.OrderBook_evt_TakeOrder
+    SELECT evt_tx_hash, evt_block_number FROM raindex_bnb.OrderBook_evt_TakeOrder
     UNION ALL
-bnb.OrderBook_evt_TakeOrderV2
+    SELECT evt_tx_hash, evt_block_number FROM raindex_bnb.OrderBook_evt_TakeOrderV2
   ) AS events
 ),
 bnb_token_volume AS (
@@ -24,7 +24,7 @@ SELECT
   block_date,
   token_symbol AS token,
   usd_volume
-bnb_token_volume
+FROM bnb_token_volume
 ORDER BY
   block_date,
   token_symbol;

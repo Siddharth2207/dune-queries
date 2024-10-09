@@ -1,4 +1,3 @@
-  
 WITH unique_events AS (
   SELECT DISTINCT evt_tx_hash, evt_block_number
   FROM (
