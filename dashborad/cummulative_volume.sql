@@ -65,16 +65,11 @@ polygon_raw_data AS (
     token_symbol
 ),
 
--- BNB Network (Modified)
+-- Repeat similar steps for BNB
 bnb_unique_events AS (
   SELECT DISTINCT evt_tx_hash, evt_block_number
-  FROM (
-    SELECT evt_tx_hash, evt_block_number FROM raindex_bnb.OrderBook_evt_TakeOrder
-    UNION ALL
-    SELECT evt_tx_hash, evt_block_number FROM raindex_bnb.OrderBook_evt_TakeOrderV2
-  ) AS events
+  FROM raindex_bnb.OrderBook_evt_TakeOrder
 ),
-
 bnb_trade_flows AS (
   SELECT
     t.block_date,
