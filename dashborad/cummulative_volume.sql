@@ -13,7 +13,9 @@ eth_trade_flows AS (
   FROM dex.trades AS t
   INNER JOIN eth_unique_events AS ue
     ON t.tx_hash = ue.evt_tx_hash AND t.block_number = ue.evt_block_number
-  WHERE t.block_date >= TRY_CAST('2023-09-01' AS DATE)
+  WHERE
+    t.block_date >= TRY_CAST('2023-09-01' AS DATE)
+    AND LOWER(t.blockchain) = 'ethereum'  -- Added network filter
 ),
 eth_raw_data AS (
   SELECT
@@ -49,7 +51,9 @@ polygon_trade_flows AS (
   FROM dex.trades AS t
   INNER JOIN polygon_unique_events AS ue
     ON t.tx_hash = ue.evt_tx_hash AND t.block_number = ue.evt_block_number
-  WHERE t.block_date >= TRY_CAST('2023-09-01' AS DATE)
+  WHERE
+    t.block_date >= TRY_CAST('2023-09-01' AS DATE)
+    AND LOWER(t.blockchain) = 'polygon'  -- Added network filter
 ),
 polygon_raw_data AS (
   SELECT
@@ -86,7 +90,9 @@ bnb_trade_flows AS (
   FROM dex.trades AS t
   INNER JOIN bnb_unique_events AS ue
     ON t.tx_hash = ue.evt_tx_hash AND t.block_number = ue.evt_block_number
-  WHERE t.block_date >= TRY_CAST('2023-09-01' AS DATE)
+  WHERE
+    t.block_date >= TRY_CAST('2023-09-01' AS DATE)
+    AND LOWER(t.blockchain) = 'bnb'  -- Added network filter
 ),
 bnb_raw_data AS (
   SELECT
@@ -122,7 +128,9 @@ base_trade_flows AS (
   FROM dex.trades AS t
   INNER JOIN base_unique_events AS ue
     ON t.tx_hash = ue.evt_tx_hash AND t.block_number = ue.evt_block_number
-  WHERE t.block_date >= TRY_CAST('2023-09-01' AS DATE)
+  WHERE
+    t.block_date >= TRY_CAST('2023-09-01' AS DATE)
+    AND LOWER(t.blockchain) = 'base'  -- Added network filter
 ),
 base_raw_data AS (
   SELECT
@@ -159,7 +167,9 @@ arbitrum_trade_flows AS (
   FROM dex.trades AS t
   INNER JOIN arbitrum_unique_events AS ue
     ON t.tx_hash = ue.evt_tx_hash AND t.block_number = ue.evt_block_number
-  WHERE t.block_date >= TRY_CAST('2023-09-01' AS DATE)
+  WHERE
+    t.block_date >= TRY_CAST('2023-09-01' AS DATE)
+    AND LOWER(t.blockchain) = 'arbitrum'  -- Added network filter
 ),
 arbitrum_raw_data AS (
   SELECT
