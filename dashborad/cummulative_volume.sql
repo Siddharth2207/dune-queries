@@ -13,7 +13,9 @@ eth_trade_flows AS (
   FROM dex.trades AS t
   INNER JOIN eth_unique_events AS ue
     ON t.tx_hash = ue.evt_tx_hash AND t.block_number = ue.evt_block_number
-  WHERE t.block_date >= TRY_CAST('2023-09-01' AS DATE)
+  WHERE
+    t.block_date >= TRY_CAST('2023-09-01' AS DATE)
+    AND LOWER(t.blockchain) = 'ethereum'  -- Added network filter
 ),
 eth_raw_data AS (
   SELECT
@@ -49,7 +51,9 @@ polygon_trade_flows AS (
   FROM dex.trades AS t
   INNER JOIN polygon_unique_events AS ue
     ON t.tx_hash = ue.evt_tx_hash AND t.block_number = ue.evt_block_number
-  WHERE t.block_date >= TRY_CAST('2023-09-01' AS DATE)
+  WHERE
+    t.block_date >= TRY_CAST('2023-09-01' AS DATE)
+    AND LOWER(t.blockchain) = 'polygon'  -- Added network filter
 ),
 polygon_raw_data AS (
   SELECT
@@ -65,10 +69,15 @@ polygon_raw_data AS (
     token_symbol
 ),
 
+
 -- Repeat similar steps for BNB
 bnb_unique_events AS (
   SELECT DISTINCT evt_tx_hash, evt_block_number
-  FROM raindex_bnb.OrderBook_evt_TakeOrder
+  FROM (
+    SELECT evt_tx_hash, evt_block_number FROM raindex_bnb.OrderBook_evt_TakeOrder
+    UNION ALL
+    SELECT evt_tx_hash, evt_block_number FROM raindex_bnb.OrderBook_evt_TakeOrderV2
+  ) AS events
 ),
 bnb_trade_flows AS (
   SELECT
@@ -81,7 +90,9 @@ bnb_trade_flows AS (
   FROM dex.trades AS t
   INNER JOIN bnb_unique_events AS ue
     ON t.tx_hash = ue.evt_tx_hash AND t.block_number = ue.evt_block_number
-  WHERE t.block_date >= TRY_CAST('2023-09-01' AS DATE)
+  WHERE
+    t.block_date >= TRY_CAST('2023-09-01' AS DATE)
+    AND LOWER(t.blockchain) = 'bnb'  -- Added network filter
 ),
 bnb_raw_data AS (
   SELECT
@@ -117,7 +128,9 @@ base_trade_flows AS (
   FROM dex.trades AS t
   INNER JOIN base_unique_events AS ue
     ON t.tx_hash = ue.evt_tx_hash AND t.block_number = ue.evt_block_number
-  WHERE t.block_date >= TRY_CAST('2023-09-01' AS DATE)
+  WHERE
+    t.block_date >= TRY_CAST('2023-09-01' AS DATE)
+    AND LOWER(t.blockchain) = 'base'  -- Added network filter
 ),
 base_raw_data AS (
   SELECT
@@ -136,8 +149,13 @@ base_raw_data AS (
 -- Repeat similar steps for Arbitrum
 arbitrum_unique_events AS (
   SELECT DISTINCT evt_tx_hash, evt_block_number
-  FROM raindex_arbitrum.OrderBook_evt_TakeOrder
+  FROM (
+    SELECT evt_tx_hash, evt_block_number FROM raindex_arbitrum.OrderBook_evt_TakeOrder
+    UNION ALL
+    SELECT evt_tx_hash, evt_block_number FROM raindex_arbitrum.OrderBook_evt_TakeOrderV2
+  ) AS events
 ),
+
 arbitrum_trade_flows AS (
   SELECT
     t.block_date,
@@ -149,7 +167,9 @@ arbitrum_trade_flows AS (
   FROM dex.trades AS t
   INNER JOIN arbitrum_unique_events AS ue
     ON t.tx_hash = ue.evt_tx_hash AND t.block_number = ue.evt_block_number
-  WHERE t.block_date >= TRY_CAST('2023-09-01' AS DATE)
+  WHERE
+    t.block_date >= TRY_CAST('2023-09-01' AS DATE)
+    AND LOWER(t.blockchain) = 'arbitrum'  -- Added network filter
 ),
 arbitrum_raw_data AS (
   SELECT
